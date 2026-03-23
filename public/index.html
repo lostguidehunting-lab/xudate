@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xudate.ai | Soil Compounding Engine</title>
+<meta name="description" content="AI-powered soil amendment formulation at the intersection of chemistry, biology, physics, and AI.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231A4A3A'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='14' font-weight='bold' font-family='system-ui'>Xu</text></svg>">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0B0F14; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useRef, useEffect } = React;
+
+const INGREDIENTS = [{"name":"Alfalfa Meal 3-0-2","desc":"Biological N source","N":3,"P":0,"K":2,"Ca":0.493,"Mg":0.215,"S":0.497,"Zn":0.005,"Fe":0.03,"Mn":0.005,"B":0.002,"Cu":0.001,"Mo":0,"Na":0.1,"cost_mt":500,"cost_lb":0.227,"category":"Biological N Source","function":"Slow-release nitrogen via microbial decomposition","release":"Medium (2-6 weeks)"},{"name":"Azomite Field Grade","desc":"Trace mineral remineralizer","N":0,"P":0,"K":0.2,"Ca":1.8,"Mg":0.5,"S":0.1,"Zn":0.005,"Fe":1,"Mn":0.02,"B":0.02,"Cu":0.005,"Mo":0,"Na":0.1,"cost_mt":1100,"cost_lb":0.499,"category":"Trace Mineral Source","function":"Broad-spectrum trace mineral remineralization","release":"Very Slow (months-years)"},{"name":"Bat Guano (Min. Phosphate)","desc":"High-P organic","N":1,"P":20,"K":0.5,"Ca":20,"Mg":0.5,"S":1.5,"Zn":0.01,"Fe":0.05,"Mn":0.01,"B":0.002,"Cu":0.003,"Mo":0.001,"Na":0.1,"cost_mt":800,"cost_lb":0.363,"category":"High-P Organic","function":"High phosphorus supply for root establishment","release":"Medium-Slow (4-12 weeks)"},{"name":"Beet Pulp Pellets","desc":"Carbon/energy source","N":2,"P":0.4,"K":3,"Ca":0.6,"Mg":0.2,"S":0.3,"Zn":0.003,"Fe":0.02,"Mn":0.003,"B":0.001,"Cu":0.001,"Mo":0,"Na":0.05,"cost_mt":350,"cost_lb":0.159,"category":"Carbon / Energy Source","function":"Microbial food source to drive biological activity","release":"Medium (2-8 weeks)"},{"name":"Biochar 0-0-0","desc":"Carbon/CEC builder","N":0,"P":0.1,"K":0.5,"Ca":0.5,"Mg":0.2,"S":0.1,"Zn":0.001,"Fe":0.01,"Mn":0.002,"B":0.001,"Cu":0.001,"Mo":0,"Na":0.05,"cost_mt":500,"cost_lb":0.227,"category":"Carbon / CEC Builder","function":"Permanent soil carbon; increases cation exchange capacity","release":"Permanent (100+ years)"},{"name":"Blood Meal","desc":"Fast N source","N":15,"P":0.3,"K":0.6,"Ca":0.2,"Mg":0.1,"S":0.6,"Zn":0.005,"Fe":0.02,"Mn":0.003,"B":0.001,"Cu":0.001,"Mo":0,"Na":0.1,"cost_mt":1400,"cost_lb":0.635,"category":"Fast N Source","function":"Rapid nitrogen supply for immediate plant uptake","release":"Fast (1-3 weeks)"},{"name":"Bone Ash 0-34-0","desc":"High-P mineral","N":0,"P":34,"K":0,"Ca":35,"Mg":0.1,"S":0.1,"Zn":0.005,"Fe":0.02,"Mn":0.003,"B":0.001,"Cu":0.001,"Mo":0,"Na":0.05,"cost_mt":500,"cost_lb":0.227,"category":"High-P Mineral","function":"Concentrated phosphorus source","release":"Slow (6-24 months)"},{"name":"Bone Meal 4-10-0","desc":"N-P organic fertilizer","N":4,"P":10,"K":0,"Ca":23,"Mg":0.3,"S":0.2,"Zn":0.005,"Fe":0.02,"Mn":0.003,"B":0.001,"Cu":0.001,"Mo":0,"Na":0.05,"cost_mt":1000,"cost_lb":0.454,"category":"N-P Organic Fertilizer","function":"Balanced N-P supply with strong calcium","release":"Medium (N: 2-6 wk; P: 2-6 mo)"},{"name":"BSFL Frass 3-2-1","desc":"Insect frass biostimulant","N":3,"P":2,"K":1,"Ca":0.5,"Mg":0.3,"S":0.4,"Zn":0.01,"Fe":0.05,"Mn":0.01,"B":0.002,"Cu":0.003,"Mo":0.001,"Na":0.1,"cost_mt":1100,"cost_lb":0.499,"category":"Insect Frass Biostimulant","function":"Balanced NPK with chitin-driven biological stimulation","release":"Medium (2-6 weeks)"},{"name":"Calcitic Limestone","desc":"pH buffer / Ca source","N":0,"P":0,"K":0,"Ca":35,"Mg":1,"S":0.1,"Zn":0.001,"Fe":0.01,"Mn":0.001,"B":0.001,"Cu":0.001,"Mo":0,"Na":0.05,"cost_mt":150,"cost_lb":0.068,"category":"pH Buffer / Ca Source","function":"Raise soil pH; supply plant-available calcium","release":"Slow-Medium (1-6 months)"},{"name":"Camelina Meal","desc":"Protein/omega N source","N":5.5,"P":1.1,"K":1.1,"Ca":0.6,"Mg":0.4,"S":0.5,"Zn":0.005,"Fe":0.03,"Mn":0.005,"B":0.002,"Cu":0.001,"Mo":0,"Na":0.1,"cost_mt":560,"cost_lb":0.254,"category":"Protein / Omega N Source","function":"Moderate slow-release nitrogen with omega fatty acids","release":"Medium (3-8 weeks)"},{"name":"Canadian Wollastonite","desc":"Calcium silicate mineral","N":0,"P":0,"K":0,"Ca":20,"Mg":1,"S":0.1,"Zn":0.001,"Fe":0.01,"Mn":0.001,"B":0.001,"Cu":0.001,"Mo":0,"Na":0.05,"cost_mt":350,"cost_lb":0.159,"category":"Calcium Silicate Mineral","function":"Plant-available silicon and calcium supply","release":"Slow (months-years)"},{"name":"Canola Meal 6-3-4","desc":"Protein N source","N":6,"P":1,"K":1,"Ca":0.7,"Mg":0.5,"S":0.7,"Zn":0.005,"Fe":0.03,"Mn":0.005,"B":0.002,"Cu":0.001,"Mo":0,"Na":0.1,"cost_mt":550,"cost_lb":0.249,"category":"Protein N Source","function":"Balanced slow-release NPK from protein decomposition","release":"Medium (3-8 weeks)"},{"name":"Dolomitic Lime","desc":"Ca-Mg pH buffer","N":0,"P":0,"K":0,"Ca":22,"Mg":11,"S":0.1,"Zn":0.001,"Fe":0.01,"Mn":0.001,"B":0.001,"Cu":0.001,"Mo":0,"Na":0.05,"cost_mt":180,"cost_lb":0.082,"category":"Ca-Mg pH Buffer","function":"Raise soil pH; supply calcium and magnesium","release":"Slow-Medium (1-6 months)"},{"name":"Dried Molasses","desc":"Carbon/energy biostimulant","N":0.5,"P":0.2,"K":1.5,"Ca":0.8,"Mg":0.3,"S":0.5,"Zn":0.003,"Fe":0.02,"Mn":0.003,"B":0.001,"Cu":0.001,"Mo":0,"Na":0.05,"cost_mt":2000,"cost_lb":0.907,"category":"Carbon / Energy Biostimulant","function":"Rapid microbial food source","release":"Very Fast (days-2 weeks)"},{"name":"Elemental Sulfur","desc":"Soil acidifier / S source","N":0,"P":0,"K":0,"Ca":0,"Mg":0,"S":90,"Zn":0.001,"Fe":0.01,"Mn":0.001,"B":0.001,"Cu":0.001,"Mo":0,"Na":0.05,"cost_mt":700,"cost_lb":0.318,"category":"Soil Acidifier / S Source","function":"Lower soil pH through microbial oxidation","release":"Slow (weeks-months)"},{"name":"Feather Meal 13-0-0","desc":"Slow-release N","N":13,"P":0,"K":0,"Ca":0.19,"Mg":0.1,"S":0.5,"Zn":0.005,"Fe":0.02,"Mn":0.003,"B":0.001,"Cu":0.001,"Mo":0,"Na":0.1,"cost_mt":1100,"cost_lb":0.499,"category":"Slow-Release N","function":"Extended nitrogen supply through keratin decomposition","release":"Slow (4-12 weeks)"},{"name":"Fishbone Meal 4-13-0","desc":"N-P organic fertilizer","N":4,"P":13,"K":0,"Ca":20,"Mg":0.5,"S":0.5,"Zn":0.01,"Fe":0.05,"Mn":0.01,"B":0.002,"Cu":0.003,"Mo":0.001,"Na":0.1,"cost_mt":2400,"cost_lb":1.089,"category":"N-P Organic Fertilizer","function":"Balanced N-P supply with significant calcium","release":"Medium (N: 2-4 wk; P: 2-6 mo)"},{"name":"Fishmeal","desc":"High N-P protein source","N":10.4,"P":3,"K":0.5,"Ca":5,"Mg":0.5,"S":0.8,"Zn":0.01,"Fe":0.05,"Mn":0.01,"B":0.002,"Cu":0.003,"Mo":0.001,"Na":0.1,"cost_mt":2500,"cost_lb":1.134,"category":"High N-P Protein Source","function":"Fast-release nitrogen and moderate phosphorus","release":"Medium-Fast (1-4 weeks)"},{"name":"Flax Meal","desc":"Protein/omega N source","N":5,"P":1.1,"K":1,"Ca":0.32,"Mg":0.4,"S":0.4,"Zn":0.005,"Fe":0.03,"Mn":0.005,"B":0.002,"Cu":0.001,"Mo":0,"Na":0.1,"cost_mt":600,"cost_lb":0.272,"category":"Protein / Omega N Source","function":"Moderate nitrogen supply with omega-3 content","release":"Medium (3-8 weeks)"},{"name":"Glacial Rock Dust","desc":"Broad mineral remineralizer","N":0,"P":0,"K":0,"Ca":2,"Mg":1,"S":0.1,"Zn":0.005,"Fe":1,"Mn":0.02,"B":0.02,"Cu":0.005,"Mo":0,"Na":0.1,"cost_mt":150,"cost_lb":0.068,"category":"Broad Mineral Remineralizer","function":"Long-term broad-spectrum mineral supply","release":"Very Slow (years)"},{"name":"Greensand (Glauconite)","desc":"Slow K / trace mineral","N":0,"P":0.4,"K":0.2,"Ca":0.5,"Mg":0.5,"S":0.1,"Zn":0.005,"Fe":0.5,"Mn":0.02,"B":0.01,"Cu":0.005,"Mo":0,"Na":0.1,"cost_mt":280,"cost_lb":0.127,"category":"Slow K / Trace Mineral","function":"Very slow potassium release with iron and trace minerals","release":"Very Slow (months-years)"},{"name":"Gypsum","desc":"Ca-S soil conditioner","N":0,"P":0,"K":0,"Ca":23,"Mg":0,"S":18,"Zn":0.001,"Fe":0.01,"Mn":0.001,"B":0.001,"Cu":0.001,"Mo":0,"Na":0.05,"cost_mt":500,"cost_lb":0.227,"category":"Ca-S Soil Conditioner","function":"Calcium and sulfur without pH change; sodic soil remediation","release":"Medium (weeks-months)"},{"name":"Hulpaso Basalt Rock Dust","desc":"Paramagnetic remineralizer","N":0,"P":0.18,"K":1.1,"Ca":10.8,"Mg":2.54,"S":0.12,"Zn":0.008,"Fe":7.08,"Mn":0.174,"B":0.001,"Cu":0.004,"Mo":0,"Na":2.3,"cost_mt":300,"cost_lb":0.136,"category":"Paramagnetic Remineralizer","function":"Iron-rich basalt for paramagnetic energization","release":"Very Slow (years)"},{"name":"Humalite Ag4 0-0-0","desc":"Humic acid source","N":0,"P":0,"K":0,"Ca":0,"Mg":0,"S":0.264,"Zn":0.001,"Fe":0.01,"Mn":0.002,"B":0.001,"Cu":0.001,"Mo":0,"Na":0,"cost_mt":450,"cost_lb":0.204,"category":"Humic Acid Source","function":"Humic/fulvic acid for nutrient chelation and CEC","release":"Fast chelation; long-term CEC"},{"name":"Kelp Meal","desc":"Biostimulant","N":1,"P":0,"K":2,"Ca":0.193,"Mg":0.432,"S":2.68,"Zn":0.005,"Fe":0.02,"Mn":0.004,"B":0.01,"Cu":0.002,"Mo":0,"Na":0,"cost_mt":2700,"cost_lb":1.225,"category":"Biostimulant","function":"Plant growth hormones and trace minerals","release":"Fast hormones; slow minerals"},{"name":"Langbeinite 0-0-22","desc":"K-Mg-S mineral","N":0,"P":0,"K":22,"Ca":0,"Mg":10,"S":22,"Zn":0.001,"Fe":0.002,"Mn":0.001,"B":0.001,"Cu":0.001,"Mo":0,"Na":0,"cost_mt":1100,"cost_lb":0.499,"category":"K-Mg-S Mineral","function":"Immediate potassium, magnesium, and sulfur","release":"Fast (soluble, days)"},{"name":"Oyster Shell Flour","desc":"Calcium carbonate source","N":0,"P":0.05,"K":0.05,"Ca":38,"Mg":0.3,"S":0.1,"Zn":0.01,"Fe":0.05,"Mn":0.01,"B":0.002,"Cu":0.003,"Mo":0.001,"Na":0.5,"cost_mt":400,"cost_lb":0.181,"category":"Calcium Carbonate Source","function":"Slow-release calcium and gentle pH buffering","release":"Very Slow (months-years)"},{"name":"Porcine Meal","desc":"Protein N source","N":10,"P":3,"K":0.4,"Ca":5,"Mg":0.3,"S":0.56,"Zn":0.01,"Fe":0.02,"Mn":0.003,"B":0,"Cu":0.001,"Mo":0.5,"Na":0,"cost_mt":800,"cost_lb":0.363,"category":"Protein N Source","function":"High nitrogen from rendered animal protein","release":"Medium-Fast (1-4 weeks)"},{"name":"Rock Phosphate 0-3-0","desc":"Long-term P source","N":0,"P":20,"K":0,"Ca":0.003,"Mg":0.5,"S":0.294,"Zn":0.002,"Fe":0.03,"Mn":0.002,"B":0.001,"Cu":0.001,"Mo":0,"Na":0,"cost_mt":650,"cost_lb":0.295,"category":"Slow-Release P Source","function":"Long-term P source + microbial partner","release":"Very Slow"},{"name":"Sodium Bicarbonate","desc":"Alkalinity buffer","N":0,"P":0,"K":0,"Ca":0,"Mg":0,"S":0,"Zn":0,"Fe":0,"Mn":0,"B":0,"Cu":0,"Mo":0,"Na":27.1,"cost_mt":1650,"cost_lb":0.748,"category":"Alkalinity Buffer","function":"Emergency pH raise for extremely acidic conditions","release":"Very Fast (days)"},{"name":"Soy Protein Hydrolysate 14-0-0","desc":"Amino acid biostimulant","N":14,"P":0,"K":0,"Ca":0.3,"Mg":0.2,"S":0.8,"Zn":0.01,"Fe":0.1,"Mn":0.02,"B":0.005,"Cu":0.003,"Mo":0.001,"Na":0.1,"cost_mt":1500,"cost_lb":0.680,"category":"Amino Acid Biostimulant","function":"Free amino acid supply for plant and microbial uptake","release":"Very Fast (days-1 week)"},{"name":"Sulphate of Potash 0-0-53","desc":"Soluble K source","N":0,"P":0,"K":53,"Ca":0,"Mg":0.33,"S":2.33,"Zn":0.001,"Fe":0.002,"Mn":0.001,"B":0.001,"Cu":0.001,"Mo":0,"Na":0,"cost_mt":2200,"cost_lb":0.998,"category":"Soluble K Source","function":"Immediate high-concentration potassium","release":"Very Fast (soluble, days)"},{"name":"Volcano Phos","desc":"Reactive phosphate source","N":0,"P":20,"K":0.3,"Ca":30,"Mg":0.5,"S":0.5,"Zn":0.002,"Fe":0.025,"Mn":0.002,"B":0.001,"Cu":0.001,"Mo":0,"Na":0,"cost_mt":350,"cost_lb":0.159,"category":"Reactive Phosphate Source","function":"Slow-release phosphorus from volcanic rock phosphate","release":"Slow (3-12 months)"},{"name":"Worm Castings 1-2-0","desc":"Microbial inoculant","N":1,"P":2,"K":0,"Ca":0.193,"Mg":0.063,"S":0.86,"Zn":0.005,"Fe":0.03,"Mn":0.005,"B":0.002,"Cu":0.002,"Mo":0,"Na":0,"cost_mt":1000,"cost_lb":0.454,"category":"Microbial Inoculant","function":"Living soil biology inoculation","release":"Fast biology; slow nutrients"},{"name":"Zeolite","desc":"Nutrient retention mineral","N":0,"P":0,"K":0.56,"Ca":0.5,"Mg":0.5,"S":0.5,"Zn":0.001,"Fe":0.002,"Mn":0.001,"B":0.001,"Cu":0.001,"Mo":0,"Na":0,"cost_mt":550,"cost_lb":0.249,"category":"Nutrient Retention Mineral","function":"Increase soil CEC and reduce nutrient leaching","release":"Permanent (structural)"},{"name":"Urea 46-0-0","desc":"Synthetic nitrogen granule","N":46,"P":0,"K":0,"Ca":0,"Mg":0,"S":0,"Zn":0,"Fe":0,"Mn":0,"B":0,"Cu":0,"Mo":0,"Na":0,"cost_mt":850,"cost_lb":0.386,"category":"Conventional N","function":"Immediate nitrogen supply","release":"Very Fast (days-weeks)"},{"name":"Ammonium Sulfate 21-0-0-24S","desc":"Synthetic N + S granule","N":21,"P":0,"K":0,"Ca":0,"Mg":0,"S":24,"Zn":0,"Fe":0,"Mn":0,"B":0,"Cu":0,"Mo":0,"Na":0,"cost_mt":650,"cost_lb":0.295,"category":"Conventional N+S","function":"Nitrogen + sulfur, acidifying","release":"Fast (weeks)"},{"name":"MAP 11-52-0","desc":"Mono-ammonium phosphate","N":11,"P":52,"K":0,"Ca":0,"Mg":0,"S":0,"Zn":0,"Fe":0,"Mn":0,"B":0,"Cu":0,"Mo":0,"Na":0,"cost_mt":950,"cost_lb":0.431,"category":"Conventional P","function":"Immediate phosphorus supply","release":"Fast (weeks)"},{"name":"DAP 18-46-0","desc":"Di-ammonium phosphate","N":18,"P":46,"K":0,"Ca":0,"Mg":0,"S":0,"Zn":0,"Fe":0,"Mn":0,"B":0,"Cu":0,"Mo":0,"Na":0,"cost_mt":920,"cost_lb":0.417,"category":"Conventional P+N","function":"Immediate phosphorus + nitrogen","release":"Fast (weeks)"},{"name":"Muriate of Potash 0-0-60","desc":"Potassium chloride (KCl)","N":0,"P":0,"K":60,"Ca":0,"Mg":0,"S":0,"Zn":0,"Fe":0,"Mn":0,"B":0,"Cu":0,"Mo":0,"Na":0,"cost_mt":750,"cost_lb":0.340,"category":"Conventional K","function":"Immediate potassium supply","release":"Very Fast (days)"},{"name":"Triple Superphosphate 0-46-0","desc":"Concentrated phosphate","N":0,"P":46,"K":0,"Ca":20,"Mg":0,"S":1,"Zn":0,"Fe":0,"Mn":0,"B":0,"Cu":0,"Mo":0,"Na":0,"cost_mt":880,"cost_lb":0.399,"category":"Conventional P","function":"Immediate phosphorus, Ca bonus","release":"Fast (weeks)"},{"name":"Ammonium Nitrate 34-0-0","desc":"Synthetic nitrogen","N":34,"P":0,"K":0,"Ca":0,"Mg":0,"S":0,"Zn":0,"Fe":0,"Mn":0,"B":0,"Cu":0,"Mo":0,"Na":0,"cost_mt":750,"cost_lb":0.340,"category":"Conventional N","function":"Fast nitrogen, less volatile than urea","release":"Fast (weeks)"}];
+
+const SEED_BLENDS = [{"name":"AT Zone 1: Mixed Wetland","source":"Alberta Transportation","region":"Boreal/Wetland","ph_low":5,"ph_high":7.5,"n_demand":"Medium","p_demand":"Low","k_demand":"Medium","s_demand":"Low"},{"name":"AT Zone 2: Dry Mixedwood","source":"Alberta Transportation","region":"Boreal/Dry Mixedwood","ph_low":5,"ph_high":7.5,"n_demand":"Medium","p_demand":"Low","k_demand":"Medium","s_demand":"Low"},{"name":"AT Zone 3: Central Mixedwood","source":"Alberta Transportation","region":"Boreal/Central Mixedwood","ph_low":5,"ph_high":7.5,"n_demand":"Medium","p_demand":"Low","k_demand":"Medium","s_demand":"Low"},{"name":"AT Zone 4: Mixedgrass/Dry Mixedgrass","source":"Alberta Transportation","region":"Grassland/Brown-Dark Brown","ph_low":6,"ph_high":8.5,"n_demand":"Low","p_demand":"Low","k_demand":"Medium","s_demand":"Low"},{"name":"AT Zone 5: Central Parkland","source":"Alberta Transportation","region":"Parkland/Dark Brown-Black","ph_low":5.5,"ph_high":8,"n_demand":"Medium","p_demand":"Low","k_demand":"Medium","s_demand":"Low"},{"name":"AT Zone 6: Lower Foothills","source":"Alberta Transportation","region":"Foothills","ph_low":5,"ph_high":7.5,"n_demand":"Medium","p_demand":"Low","k_demand":"Medium","s_demand":"Low"},{"name":"Edmonton: Central Parkland","source":"City of Edmonton","region":"Central Parkland","ph_low":5.5,"ph_high":8,"n_demand":"Medium","p_demand":"Low","k_demand":"Medium","s_demand":"Low"},{"name":"Edmonton: Wet Meadow","source":"City of Edmonton","region":"Central Parkland/Wet","ph_low":5.5,"ph_high":7.5,"n_demand":"Medium","p_demand":"Low","k_demand":"Medium","s_demand":"Low"},{"name":"Lethbridge: Dryland","source":"City of Lethbridge","region":"Grassland/Dark Brown","ph_low":6,"ph_high":8.5,"n_demand":"Low","p_demand":"Low","k_demand":"Medium","s_demand":"Low"},{"name":"EID Reclamation","source":"Eastern Irrigation District","region":"Grassland/Brown","ph_low":6,"ph_high":8.5,"n_demand":"Low","p_demand":"Low","k_demand":"Medium","s_demand":"Low"},{"name":"Canmore: Wildflower Mix","source":"Town of Canmore","region":"Foothills/Montane","ph_low":5.5,"ph_high":8,"n_demand":"Low","p_demand":"Low","k_demand":"Low","s_demand":"Low"},{"name":"AITF: Seral F. hallii Grassland","source":"InnoTech Alberta","region":"Northern Fescue","ph_low":5.5,"ph_high":8,"n_demand":"Low","p_demand":"Medium","k_demand":"Medium","s_demand":"Low"},{"name":"AITF: Mixed Grass","source":"InnoTech Alberta","region":"Mixedgrass/Dark Brown","ph_low":6,"ph_high":8.5,"n_demand":"Low","p_demand":"Low","k_demand":"Medium","s_demand":"Low"},{"name":"AITF: Saline/Wetland","source":"InnoTech Alberta","region":"Mixedgrass/Saline","ph_low":6,"ph_high":9,"n_demand":"Low","p_demand":"Low","k_demand":"Medium","s_demand":"Low"},{"name":"AITF: Foothills Fescue","source":"InnoTech Alberta","region":"Foothills Fescue","ph_low":5.5,"ph_high":7.5,"n_demand":"Low","p_demand":"Low","k_demand":"Medium","s_demand":"Low"},{"name":"BY: Boreal Forest","source":"BrettYoung","region":"Boreal Forest","ph_low":5,"ph_high":7.5,"n_demand":"Medium","p_demand":"Low","k_demand":"Medium","s_demand":"Low"},{"name":"BY: Grassland","source":"BrettYoung","region":"Grassland/Brown-Dark Brown","ph_low":6,"ph_high":8.5,"n_demand":"Low","p_demand":"Low","k_demand":"Medium","s_demand":"Low"},{"name":"BY: Parkland","source":"BrettYoung","region":"Parkland/Dark Brown-Black","ph_low":5.5,"ph_high":8,"n_demand":"Medium","p_demand":"Low","k_demand":"Medium","s_demand":"Low"},{"name":"Covers: Rejuvenation Cover","source":"Covers & Co.","region":"Degraded/Reclamation","ph_low":5.8,"ph_high":8,"n_demand":"Very Low (N-fix)","p_demand":"High","k_demand":"Medium","s_demand":"Medium-High"},{"name":"Recovery: Saline Lowland","source":"Neville et al.","region":"Mixedgrass/Saline","ph_low":6,"ph_high":9,"n_demand":"Very Low","p_demand":"Low","k_demand":"Low","s_demand":"Low"},{"name":"GMSL: Special Areas Solonetzic","source":"Gold Medal Seeds","region":"Brown Soil Zone/Solonetzic","ph_low":6,"ph_high":9,"n_demand":"Very Low","p_demand":"Low","k_demand":"Low","s_demand":"Low"},{"name":"GMSL: Special Areas Saline","source":"Gold Medal Seeds","region":"Any/Saline","ph_low":6,"ph_high":9,"n_demand":"Very Low","p_demand":"Low","k_demand":"Low","s_demand":"Low"}];
+
+const INTERACTIONS = [{"pair":"Calcitic Lime + Elemental Sulfur","type":"CONFLICT","note":"Neutralize each other. Never combine."},{"pair":"Dolomitic Lime + Elemental Sulfur","type":"CONFLICT","note":"Opposing pH functions."},{"pair":"Calcitic Lime + Bone Ash","type":"CONFLICT","note":"Lime raises pH, locking P."},{"pair":"Calcitic Lime + Bone Meal","type":"CONFLICT","note":"Same P-lock issue at elevated pH."},{"pair":"Calcitic Lime + Volcano Phos","type":"CONFLICT","note":"Rock phosphate needs acidic conditions."},{"pair":"Calcitic Lime + Bat Guano","type":"WARNING","note":"Moderate rates OK, high rates lock P."},{"pair":"Dolomitic Lime + All P sources","type":"CONFLICT","note":"Same as calcitic plus Mg competition."},{"pair":"Elemental Sulfur + Worm Castings","type":"WARNING","note":"Acid can harm biology."},{"pair":"Elemental Sulfur + Rock Phosphates","type":"SYNERGY","note":"Sulfur acidification improves P release."},{"pair":"Humalite + Biochar","type":"SYNERGY","note":"Humic acid charges biochar."},{"pair":"Humalite + Rock Phosphates","type":"SYNERGY","note":"Humic acid chelates P."},{"pair":"Humalite + Micronutrient sources","type":"SYNERGY","note":"Chelation improves Zn, Fe, Mn, Cu."},{"pair":"Biochar + Worm Castings","type":"SYNERGY","note":"Castings charge biochar and inoculate."},{"pair":"Biochar + Zeolite","type":"SYNERGY","note":"Dual CEC building."},{"pair":"Blood Meal + Beet Pulp","type":"SYNERGY","note":"Fast N + carbon energy balances C:N."},{"pair":"Blood Meal + Dried Molasses","type":"SYNERGY","note":"Fast N + fast carbon."},{"pair":"Dried Molasses + Any N source","type":"SYNERGY","note":"Sugar drives rapid N cycling."},{"pair":"Kelp + Humalite","type":"SYNERGY","note":"Hormones + chelation."},{"pair":"Kelp + BSFL Frass","type":"SYNERGY","note":"Complementary biostimulant pathways."},{"pair":"Gypsum + Sodium Bicarb","type":"CONFLICT","note":"Gypsum displaces Na; Na bicarb adds Na."},{"pair":"Gypsum + Biochar","type":"SYNERGY","note":"Structure + retention."},{"pair":"Porcine Meal + Legume seed blends","type":"SYNERGY","note":"Mo content critical for nitrogenase."},{"pair":"Hulpaso Basalt + High-P sources","type":"WARNING","note":"High Fe can precipitate P in alkaline."},{"pair":"Hulpaso Basalt + Sodic soils","type":"WARNING","note":"Na content (2.3%) can worsen SAR."},{"pair":"Sodium Bicarb + Clay soils","type":"CONFLICT","note":"27% Na will disperse clay structure."},{"pair":"Worm Castings + High-heat pelleting","type":"CONFLICT","note":"Heat kills biology."}];
+
+const HELPERS = {"Alfalfa Meal 3-0-2":{b:1,a:0},"Azomite Field Grade":{b:0,a:1},"Beet Pulp Pellets":{b:1,a:0},"Blood Meal":{b:1,a:0},"Biochar 0-0-0":{b:0,a:1},"Bone Ash 0-34-0":{b:0,a:1},"Camelina Meal":{b:1,a:0},"Feather Meal 13-0-0":{b:1,a:0},"Flax Meal":{b:1,a:0},"Glacial Rock Dust":{b:0,a:1},"Hulpaso Basalt Rock Dust":{b:0,a:1},"Porcine Meal":{b:1,a:0},"Soy Protein Hydrolysate 14-0-0":{b:1,a:0},"Volcano Phos":{b:0,a:1},"Worm Castings 1-2-0":{b:1,a:0},"Rock Phosphate 0-3-0":{b:0,a:1},"Oyster Shell Flour":{b:0,a:1}};
+
+const DEFAULT_SOIL = {
+  ph: "", ec: "", sar: "", om: "",
+  no3: "", nh4: "", p: "", k: "",
+  ca: "", mg: "", s: "", na: "",
+  zn: "", fe: "", mn: "", b: "", cu: "",
+  respiration: "", plfa_total: "", plfa_fungi: "", plfa_bacteria: "",
+  amf_colonization: "", mic_biomass_c: "", mic_biomass_n: "",
+  beta_glucosidase: "", phosphatase: "", urease: "", dehydrogenase: "",
+  fungi_bacteria_ratio: "", gram_pos_neg_ratio: ""
+};
+
+const SOIL_FIELDS = [
+  { section: "Chemistry", fields: [
+    { key: "ph", label: "pH (water)", unit: "pH", placeholder: "6.7" },
+    { key: "ec", label: "EC", unit: "dS/m", placeholder: "0.1" },
+    { key: "sar", label: "SAR", unit: "ratio", placeholder: "1.2" },
+    { key: "om", label: "Organic Matter", unit: "%", placeholder: "3.5" },
+  ]},
+  { section: "Macronutrients", fields: [
+    { key: "no3", label: "NO3-N", unit: "ppm", placeholder: "5" },
+    { key: "nh4", label: "NH4-N", unit: "ppm", placeholder: "3" },
+    { key: "p", label: "P (available)", unit: "ppm", placeholder: "12" },
+    { key: "k", label: "K", unit: "ppm", placeholder: "200" },
+    { key: "s", label: "S (SO4-S)", unit: "ppm", placeholder: "10" },
+  ]},
+  { section: "Cations & Saturation", fields: [
+    { key: "ca", label: "Ca", unit: "ppm", placeholder: "2500" },
+    { key: "mg", label: "Mg", unit: "ppm", placeholder: "500" },
+    { key: "na", label: "Na", unit: "ppm", placeholder: "30" },
+  ]},
+  { section: "Micronutrients", fields: [
+    { key: "zn", label: "Zn", unit: "ppm", placeholder: "1.0" },
+    { key: "fe", label: "Fe", unit: "ppm", placeholder: "15" },
+    { key: "mn", label: "Mn", unit: "ppm", placeholder: "8" },
+    { key: "b", label: "B", unit: "ppm", placeholder: "0.5" },
+    { key: "cu", label: "Cu", unit: "ppm", placeholder: "1.0" },
+  ]},
+  { section: "Biology (Optional)", optional: true, fields: [
+    { key: "respiration", label: "Soil Respiration (CO2)", unit: "mg CO2/g/day", placeholder: "12" },
+    { key: "mic_biomass_c", label: "Microbial Biomass C", unit: "mg/kg", placeholder: "250" },
+    { key: "mic_biomass_n", label: "Microbial Biomass N", unit: "mg/kg", placeholder: "35" },
+    { key: "plfa_total", label: "Total PLFA", unit: "nmol/g", placeholder: "45" },
+    { key: "plfa_fungi", label: "Fungal PLFA", unit: "nmol/g", placeholder: "8" },
+    { key: "plfa_bacteria", label: "Bacterial PLFA", unit: "nmol/g", placeholder: "30" },
+    { key: "fungi_bacteria_ratio", label: "Fungi:Bacteria Ratio", unit: "ratio", placeholder: "0.25" },
+    { key: "gram_pos_neg_ratio", label: "Gram+:Gram- Ratio", unit: "ratio", placeholder: "1.5" },
+    { key: "amf_colonization", label: "AMF Colonization", unit: "%", placeholder: "15" },
+    { key: "beta_glucosidase", label: "Beta-glucosidase", unit: "mg PNP/kg/hr", placeholder: "90" },
+    { key: "phosphatase", label: "Acid Phosphatase", unit: "mg PNP/kg/hr", placeholder: "120" },
+    { key: "urease", label: "Urease", unit: "mg NH4/kg/hr", placeholder: "25" },
+    { key: "dehydrogenase", label: "Dehydrogenase", unit: "mg TPF/kg/day", placeholder: "80" },
+  ]},
+];
+
+function buildPrompt(soil, blend, areaAcres, location) {
+  const blendInfo = blend ? `Target Seed Blend: ${blend.name} (Source: ${blend.source}, Region: ${blend.region})
+pH Range Required: ${blend.ph_low} - ${blend.ph_high}
+Nutrient Demands: N=${blend.n_demand}, P=${blend.p_demand}, K=${blend.k_demand}, S=${blend.s_demand}` : "No seed blend selected.";
+
+  const ingList = INGREDIENTS.map(i =>
+    `${i.name} | N:${i.N} P:${i.P} K:${i.K} Ca:${i.Ca} Mg:${i.Mg} S:${i.S} Na:${i.Na} | $${i.cost_mt}/MT | ${i.category} | Binder:${HELPERS[i.name]?.b||0} Abrasive:${HELPERS[i.name]?.a||0}`
+  ).join("\n");
+
+  const intList = INTERACTIONS.map(i => `${i.pair}: ${i.type} - ${i.note}`).join("\n");
+
+  const soilEntries = Object.entries(soil).filter(([,v]) => v !== "" && v !== null && v !== undefined);
+  const soilText = soilEntries.length > 0
+    ? soilEntries.map(([k,v]) => {
+        const field = SOIL_FIELDS.flatMap(s => s.fields).find(f => f.key === k);
+        return field ? `${field.label}: ${v} ${field.unit}` : `${k}: ${v}`;
+      }).join("\n")
+    : "No soil test data provided.";
+
+  return `You are Xudate, a soil amendment formulation engine that operates at the intersection of chemistry, biology, physics, and AI. You manufacture pelleted organic soil amendments for industrial land reclamation in Western Canada. You are the AI equivalent of a compound pharmacist, but for soil. Your name comes from root exudates, the chemical signals plants use to communicate with soil biology.
+
+TASK: Given the soil test data, target seed blend, site location, and site area below, prescribe a custom pellet blend. Output ONLY a JSON object (no markdown, no backticks) with these keys:
+
+"priority_flags": [{"flag":"P1: SODICITY","status":"OK|WARNING|CRITICAL","note":"..."}]
+"gap_analysis": [{"parameter":"pH","value":"6.7","target":"5.5-8.0","status":"ADEQUATE|LOW|HIGH|CRITICAL","mechanism":"...","direction":"..."}]
+"biology_assessment": {"data_available":bool,"overall_status":"HEALTHY|STRESSED|DEGRADED|NO DATA","findings":[{"parameter":"...","value":"...","interpretation":"...","status":"..."}],"biological_strategy":"...","future_inoculant_notes":"..."}
+"blend": [{"ingredient":"exact name from DB","pct":0.20,"rationale":"..."}]
+"blend_chemistry": {"N":0.045,"P":0.012,"K":0.008,"Ca":0.048,"Mg":0.009,"S":0.016}
+"interactions_flagged": [{"pair":"X + Y","type":"CONFLICT|WARNING|SYNERGY","note":"...","action":"..."}]
+"pellet_feasibility": {"binder_pct":0.35,"abrasive_pct":0.10,"verdict":"GOOD|MARGINAL|POOR","note":"..."}
+"economics": {"cost_per_mt":0,"cost_per_acre":0,"cost_per_lb":0,"suggested_sell_per_lb":0,"gross_margin":0.35}
+"prescribed_application_rate": {"rate_lb_per_acre":200,"rate_kg_per_ha":224,"rationale":"..."}
+"batch_calculation": {"site_acres":${areaAcres || 0},"total_product_lbs":0,"total_product_mt":0,"total_cost":0,"total_revenue":0}
+"climate_analysis": {"location":"${location || 'Not provided'}","climate_zone":"...","avg_annual_precip_mm":0,"frost_free_days":0,"growing_season":"...","climate_factors":"...","optimal_application_window":{"primary":"...","secondary":"...","avoid":"..."},"application_timing_rationale":"..."}
+"reasoning_summary": "2-3 paragraphs on formulation logic, tradeoffs, and why this blend fits this soil+plant+climate"
+
+RULES:
+1. Blend percentages must sum to exactly 1.0
+2. Check ALL ingredient interactions before finalizing
+3. Pellet blends need minimum 25% binder content for die integrity
+4. Abrasive ingredients should stay below 25% to protect pellet mill dies
+5. Consider Ca:Mg ratio (ideal 5:1 to 7:1) when choosing lime type
+6. If Ca:Mg < 5, use calcitic lime (not dolomitic). If > 10, dolomitic is OK.
+7. Never combine lime + elemental sulfur (opposing pH functions)
+8. Never combine lime + rock phosphates (pH locks P)
+9. Cost optimization matters but soil function comes first
+10. Use the actual cost_mt values from the ingredient database
+11. Calculate economics: cost_per_mt = sum of (pct * cost_mt), cost_per_lb = cost_per_mt / 2204.62, cost_per_acre = cost_per_lb * prescribed_application_rate, suggested_sell = cost_per_lb / (1 - 0.35)
+12. YOU MUST DETERMINE THE APPLICATION RATE. Prescribe the optimal lb/acre rate based on:
+    - Number and severity of soil constraints identified in gap analysis
+    - Nutrient demand level of the target seed blend (High demand = higher rate)
+    - Concentration of corrective ingredients in the blend (dilute blends need higher rates)
+    - Biology status (degraded biology needs more biological support material per acre)
+    - Climate: colder/drier climates may warrant slightly higher rates due to slower breakdown
+    - Typical ranges: 100-150 lb/ac for minor corrections, 150-250 lb/ac for moderate multi-constraint sites, 250-400 lb/ac for severely degraded reclamation sites, 400-500 lb/ac for extreme cases
+    - Also provide the rate in kg/ha (multiply lb/ac by 1.12085)
+13. BATCH CALCULATION: Site area is ${areaAcres || 'unknown'} acres. Calculate total_product_lbs = rate_lb_per_acre * site_acres. Calculate total_product_mt = total_product_lbs / 2204.62. Calculate total_cost = total_product_lbs * cost_per_lb. Calculate total_revenue = total_product_lbs * suggested_sell_per_lb.
+14. Prefer organic/biological ingredients over conventional synthetics unless soil conditions demand immediate correction
+15. Always include a humic acid source (Humalite) at 10-20% for chelation
+16. Consider nutrient release timing: match fast + slow sources for sustained feeding
+17. CLIMATE RULES: Use the site location to determine climate zone and optimize the prescription:
+    - Identify the climate zone, approximate annual precipitation, frost-free days, and growing season length
+    - Consider how climate affects pellet breakdown: cold climates slow microbial decomposition of organic N sources, dry climates slow physical dissolution, freeze-thaw cycles help physical breakdown of mineral components
+    - Adjust blend for climate: in cold/short-season areas, include faster-release N sources alongside slow-release; in dry areas, include more hygroscopic binders that attract moisture; in high-precip areas, minimize soluble nutrients that leach
+    - Prescribe optimal application timing: typically after last frost but before peak growing season, timed so pellets begin breaking down as soil biology activates at soil temps above 5-8C
+    - If location is not provided, use the seed blend's region to infer climate
+18. BIOLOGY RULES: If biology data is provided (PLFA, respiration, enzyme activity, AMF colonization, microbial biomass), assess the biological health of the soil and factor it into the blend. Key thresholds:
+    - Soil respiration below 8 mg CO2/g/day = biologically stressed, needs carbon/energy inputs (molasses, beet pulp)
+    - Fungi:Bacteria ratio below 0.1 = fungal-deficient, needs chitin sources (BSFL frass) and reduced tillage note
+    - AMF colonization below 10% = mycorrhizal deficit, avoid excess P (suppresses colonization), note future inoculant opportunity
+    - Total PLFA below 20 nmol/g = severely depleted biology, prioritize carbon energy + worm castings for inoculation
+    - Beta-glucosidase below 50 = poor carbon cycling, add labile carbon sources
+    - Phosphatase below 60 = poor P cycling even if P is adequate on paper
+    - Low microbial biomass C (<150 mg/kg) = soil biology needs rebuilding before nutrients will cycle properly
+19. If NO biology data is provided, still include the biology_assessment section but set data_available to false, overall_status to "NO DATA", provide empty findings array, and explain in biological_strategy what a biology test would reveal and why it matters
+20. When biology is degraded, prioritize biostimulant ingredients (BSFL frass, worm castings, kelp, humalite, dried molasses) even if they cost more, because nutrients without biology to cycle them are wasted
+
+SITE INFORMATION:
+Location: ${location || 'Not provided'}
+Site Area: ${areaAcres ? areaAcres + ' acres' : 'Not provided'}
+
+SOIL TEST DATA:
+${soilText}
+
+${blendInfo}
+
+INGREDIENT DATABASE:
+${ingList}
+
+INTERACTION RULES:
+${intList}
+
+Respond ONLY with the JSON object. No other text.`;
+}
+
+const tagColors = {
+  CONFLICT: { bg: "#3D1417", border: "#7F2D35", text: "#F87171" },
+  WARNING: { bg: "#3D2E0A", border: "#7F5F1A", text: "#FBBF24" },
+  SYNERGY: { bg: "#0A3D1E", border: "#1A7F3F", text: "#34D399" },
+  CRITICAL: { bg: "#3D1417", border: "#7F2D35", text: "#F87171" },
+  HIGH: { bg: "#3D2E0A", border: "#7F5F1A", text: "#FBBF24" },
+  LOW: { bg: "#3D2E0A", border: "#7F5F1A", text: "#FBBF24" },
+  ADEQUATE: { bg: "#0A3D1E", border: "#1A7F3F", text: "#34D399" },
+  OK: { bg: "#0A3D1E", border: "#1A7F3F", text: "#34D399" },
+  GOOD: { bg: "#0A3D1E", border: "#1A7F3F", text: "#34D399" },
+  MARGINAL: { bg: "#3D2E0A", border: "#7F5F1A", text: "#FBBF24" },
+  POOR: { bg: "#3D1417", border: "#7F2D35", text: "#F87171" },
+  HEALTHY: { bg: "#0A3D1E", border: "#1A7F3F", text: "#34D399" },
+  STRESSED: { bg: "#3D2E0A", border: "#7F5F1A", text: "#FBBF24" },
+  DEGRADED: { bg: "#3D1417", border: "#7F2D35", text: "#F87171" },
+  "NO DATA": { bg: "#1E293B", border: "#475569", text: "#94A3B8" },
+};
+
+function StatusTag({ status }) {
+  const s = status?.toUpperCase() || "";
+  const c = tagColors[s] || { bg: "#1E293B", border: "#475569", text: "#94A3B8" };
+  return (
+    <span style={{
+      display: "inline-block", padding: "2px 10px", borderRadius: 4,
+      background: c.bg, border: `1px solid ${c.border}`, color: c.text,
+      fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase"
+    }}>{status}</span>
+  );
+}
+
+function XudateEngine() {
+  const [soil, setSoil] = useState({...DEFAULT_SOIL});
+  const [selectedBlend, setSelectedBlend] = useState("");
+  const [siteArea, setSiteArea] = useState("");
+  const [areaUnit, setAreaUnit] = useState("acres");
+  const [siteLocation, setSiteLocation] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState("input");
+  const [loadingMsg, setLoadingMsg] = useState(0);
+  const [showBiology, setShowBiology] = useState(false);
+  const resultRef = useRef(null);
+
+  const loadingMessages = [
+    "Reading soil chemistry...",
+    "Running gap analysis...",
+    "Analyzing site climate...",
+    "Selecting ingredients...",
+    "Checking interactions...",
+    "Optimizing blend ratios...",
+    "Calculating application rate...",
+    "Modeling pellet breakdown...",
+    "Determining application timing...",
+    "Calculating project economics...",
+    "Compounding prescription..."
+  ];
+
+  useEffect(() => {
+    if (!loading) return;
+    const interval = setInterval(() => {
+      setLoadingMsg(p => (p + 1) % loadingMessages.length);
+    }, 2200);
+    return () => clearInterval(interval);
+  }, [loading]);
+
+  const handleSoilChange = (key, val) => {
+    setSoil(prev => ({ ...prev, [key]: val }));
+  };
+
+  const blend = SEED_BLENDS.find(b => b.name === selectedBlend) || null;
+
+  const runEngine = async () => {
+    setLoading(true);
+    setError(null);
+    setResult(null);
+    setLoadingMsg(0);
+    try {
+      const areaAcres = areaUnit === "sqft" ? (parseFloat(siteArea) || 0) / 43560 : (parseFloat(siteArea) || 0);
+      const prompt = buildPrompt(soil, blend, areaAcres, siteLocation);
+      const response = await fetch("/.netlify/functions/api", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 8000,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
+      const data = await response.json();
+      if (data.error) throw new Error(data.error.message || "API error");
+      const text = data.content?.map(b => b.text || "").join("") || "";
+      let cleaned = text.replace(/```json|```/g, "").trim();
+      
+      // Attempt to fix truncated JSON
+      let parsed;
+      try {
+        parsed = JSON.parse(cleaned);
+      } catch (parseErr) {
+        // Try closing open strings and braces
+        let fixed = cleaned;
+        // Close any open string
+        const quoteCount = (fixed.match(/"/g) || []).length;
+        if (quoteCount % 2 !== 0) fixed += '"';
+        // Count braces and brackets
+        const openBraces = (fixed.match(/{/g) || []).length;
+        const closeBraces = (fixed.match(/}/g) || []).length;
+        const openBrackets = (fixed.match(/\[/g) || []).length;
+        const closeBrackets = (fixed.match(/\]/g) || []).length;
+        // Close arrays then objects
+        for (let i = 0; i < openBrackets - closeBrackets; i++) fixed += ']';
+        for (let i = 0; i < openBraces - closeBraces; i++) fixed += '}';
+        try {
+          parsed = JSON.parse(fixed);
+        } catch (e2) {
+          // Last resort: find the last complete top-level key
+          const lastGoodBrace = fixed.lastIndexOf('}');
+          if (lastGoodBrace > 0) {
+            let truncated = fixed.substring(0, lastGoodBrace + 1);
+            // Ensure it ends properly
+            const ob = (truncated.match(/{/g) || []).length;
+            const cb = (truncated.match(/}/g) || []).length;
+            for (let i = 0; i < ob - cb; i++) truncated += '}';
+            parsed = JSON.parse(truncated);
+          } else {
+            throw parseErr;
+          }
+        }
+      }
+      
+      setResult(parsed);
+      setActiveTab("results");
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    } catch (e) {
+      setError("Engine error: " + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const hasData = Object.values(soil).some(v => v !== "");
+
+  return (
+    <div style={{
+      fontFamily: "'IBM Plex Sans', 'DM Sans', system-ui, sans-serif",
+      background: "#0B0F14",
+      color: "#D4D9E1",
+      minHeight: "100vh",
+      padding: 0,
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        input, select { font-family: inherit; }
+        input:focus, select:focus { outline: none; border-color: #4A9B6E !important; box-shadow: 0 0 0 2px rgba(74,155,110,0.2); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #111620; }
+        ::-webkit-scrollbar-thumb { background: #2A3444; border-radius: 3px; }
+        @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+        @keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+      `}</style>
+
+      {/* Header */}
+      <div style={{
+        background: "linear-gradient(180deg, #0F1920 0%, #0B0F14 100%)",
+        borderBottom: "1px solid #1A2332",
+        padding: "28px 32px 20px",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 6 }}>
+          <div style={{
+            width: 38, height: 38, borderRadius: 8,
+            background: "linear-gradient(135deg, #1A4A3A 0%, #2D8B5E 100%)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 16, fontWeight: 700, color: "#fff", letterSpacing: -0.5,
+          }}>Xu</div>
+          <div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: "#E8ECF0", letterSpacing: -0.5 }}>
+              Xudate
+            </div>
+            <div style={{ fontSize: 11, color: "#6B7A8D", letterSpacing: 2.5, textTransform: "uppercase", fontWeight: 500 }}>
+              Chemistry + Biology + Physics + AI
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tab Navigation */}
+      <div style={{
+        display: "flex", gap: 0, borderBottom: "1px solid #1A2332",
+        background: "#0D1218", padding: "0 32px",
+      }}>
+        {[
+          { id: "input", label: "Soil Test Input" },
+          { id: "results", label: "Prescription", disabled: !result },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => !tab.disabled && setActiveTab(tab.id)}
+            style={{
+              padding: "14px 24px", border: "none", cursor: tab.disabled ? "default" : "pointer",
+              background: "transparent",
+              color: activeTab === tab.id ? "#4A9B6E" : tab.disabled ? "#3A4555" : "#6B7A8D",
+              borderBottom: activeTab === tab.id ? "2px solid #4A9B6E" : "2px solid transparent",
+              fontSize: 13, fontWeight: 600, letterSpacing: 0.3,
+              fontFamily: "inherit",
+              transition: "all 0.2s",
+            }}
+          >{tab.label}</button>
+        ))}
+      </div>
+
+      <div style={{ padding: "24px 32px", maxWidth: 900 }}>
+
+        {/* INPUT TAB */}
+        {activeTab === "input" && (
+          <div style={{ animation: "slideUp 0.3s ease" }}>
+
+            {/* Blend Selection */}
+            <div style={{ marginBottom: 28 }}>
+              <label style={{ fontSize: 11, color: "#6B7A8D", letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 600, display: "block", marginBottom: 8 }}>
+                Target Seed Blend
+              </label>
+              <select
+                value={selectedBlend}
+                onChange={e => setSelectedBlend(e.target.value)}
+                style={{
+                  width: "100%", padding: "10px 14px", background: "#111620", border: "1px solid #1E2A3A",
+                  borderRadius: 6, color: "#D4D9E1", fontSize: 14,
+                }}
+              >
+                <option value="">Select a seed blend...</option>
+                {SEED_BLENDS.map(b => (
+                  <option key={b.name} value={b.name}>{b.name} ({b.source})</option>
+                ))}
+              </select>
+              {blend && (
+                <div style={{
+                  marginTop: 10, padding: "10px 14px", background: "#111620",
+                  border: "1px solid #1E2A3A", borderRadius: 6, fontSize: 12, color: "#8899AA",
+                }}>
+                  <span style={{ color: "#4A9B6E", fontWeight: 600 }}>{blend.region}</span>
+                  {" | pH: "}{blend.ph_low}{" - "}{blend.ph_high}
+                  {" | N: "}{blend.n_demand}{" | P: "}{blend.p_demand}{" | K: "}{blend.k_demand}{" | S: "}{blend.s_demand}
+                </div>
+              )}
+            </div>
+
+            {/* Site Information */}
+            <div style={{ marginBottom: 28 }}>
+              <label style={{ fontSize: 11, color: "#6B7A8D", letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 600, display: "block", marginBottom: 8 }}>
+                Site Location
+              </label>
+              <input
+                type="text" value={siteLocation}
+                onChange={e => setSiteLocation(e.target.value)}
+                placeholder="e.g. Drayton Valley, AB or Township 48, Range 7, W5M"
+                style={{
+                  width: "100%", padding: "10px 14px", background: "#111620",
+                  border: "1px solid #1E2A3A", borderRadius: 6, color: "#D4D9E1", fontSize: 14,
+                }}
+              />
+              <div style={{ fontSize: 11, color: "#3A4555", marginTop: 6 }}>
+                Used for climate modeling, pellet breakdown dynamics, and application timing.
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 28 }}>
+              <label style={{ fontSize: 11, color: "#6B7A8D", letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 600, display: "block", marginBottom: 8 }}>
+                Site Area
+              </label>
+              <div style={{ display: "flex", gap: 12 }}>
+                <input
+                  type="number" value={siteArea}
+                  onChange={e => setSiteArea(e.target.value)}
+                  placeholder={areaUnit === "acres" ? "100" : "435600"}
+                  style={{
+                    flex: 1, padding: "10px 14px", background: "#111620",
+                    border: "1px solid #1E2A3A", borderRadius: 6, color: "#D4D9E1", fontSize: 14,
+                  }}
+                />
+                <div style={{ display: "flex", borderRadius: 6, overflow: "hidden", border: "1px solid #1E2A3A" }}>
+                  {["acres", "sqft"].map(u => (
+                    <button
+                      key={u}
+                      onClick={() => setAreaUnit(u)}
+                      style={{
+                        padding: "10px 16px", border: "none", cursor: "pointer",
+                        background: areaUnit === u ? "#1A4A3A" : "#111620",
+                        color: areaUnit === u ? "#4A9B6E" : "#4A5568",
+                        fontSize: 12, fontWeight: 600, fontFamily: "inherit",
+                        transition: "all 0.2s",
+                      }}
+                    >{u === "sqft" ? "sq ft" : "acres"}</button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ fontSize: 11, color: "#3A4555", marginTop: 6 }}>
+                Xudate will calculate total product needed, batch size, and project economics.
+              </div>
+            </div>
+
+            {/* Soil Test Inputs */}
+            {SOIL_FIELDS.filter(s => !s.optional).map(section => (
+              <div key={section.section} style={{ marginBottom: 24 }}>
+                <div style={{
+                  fontSize: 11, color: "#4A9B6E", letterSpacing: 2, textTransform: "uppercase",
+                  fontWeight: 700, marginBottom: 12, paddingBottom: 8,
+                  borderBottom: "1px solid #1A2332",
+                }}>{section.section}</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12 }}>
+                  {section.fields.map(field => (
+                    <div key={field.key}>
+                      <label style={{ fontSize: 11, color: "#6B7A8D", fontWeight: 500, display: "block", marginBottom: 4 }}>
+                        {field.label} <span style={{ color: "#3A4555" }}>({field.unit})</span>
+                      </label>
+                      <input
+                        type="number" step="any"
+                        placeholder={field.placeholder}
+                        value={soil[field.key]}
+                        onChange={e => handleSoilChange(field.key, e.target.value)}
+                        style={{
+                          width: "100%", padding: "8px 12px", background: "#111620",
+                          border: "1px solid #1E2A3A", borderRadius: 6, color: "#D4D9E1",
+                          fontSize: 14, fontFamily: "'IBM Plex Mono', monospace",
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            {/* Biology Section Toggle */}
+            <div style={{ marginBottom: 24 }}>
+              <button
+                onClick={() => setShowBiology(!showBiology)}
+                style={{
+                  width: "100%", padding: "14px 16px", background: "#111620",
+                  border: "1px solid #1E2A3A", borderRadius: 8, cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  fontFamily: "inherit",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{
+                    width: 8, height: 8, borderRadius: "50%",
+                    background: showBiology ? "#4A9B6E" : "#3A4555",
+                    transition: "background 0.2s",
+                  }} />
+                  <span style={{
+                    fontSize: 11, color: showBiology ? "#4A9B6E" : "#6B7A8D",
+                    letterSpacing: 2, textTransform: "uppercase", fontWeight: 700,
+                  }}>
+                    Biology (Optional)
+                  </span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 11, color: "#3A4555" }}>
+                    PLFA, Enzymes, Respiration, AMF
+                  </span>
+                  <span style={{
+                    fontSize: 16, color: "#4A9B6E", transition: "transform 0.2s",
+                    transform: showBiology ? "rotate(180deg)" : "rotate(0deg)",
+                  }}>&#9662;</span>
+                </div>
+              </button>
+
+              {showBiology && (
+                <div style={{
+                  marginTop: 12, padding: "16px",
+                  background: "#0D1218", border: "1px solid #1E2A3A", borderRadius: 8,
+                  animation: "slideUp 0.2s ease",
+                }}>
+                  <div style={{ fontSize: 12, color: "#6B7A8D", marginBottom: 16, lineHeight: 1.6 }}>
+                    Enter biology data from PLFA analysis, enzyme assays, or respiration tests. This enables Xudate to assess the living system in your soil and optimize the blend for biological recovery. Future versions will prescribe specific microbial inoculants.
+                  </div>
+                  {SOIL_FIELDS.filter(s => s.optional).map(section => (
+                    <div key={section.section} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12 }}>
+                      {section.fields.map(field => (
+                        <div key={field.key}>
+                          <label style={{ fontSize: 11, color: "#6B7A8D", fontWeight: 500, display: "block", marginBottom: 4 }}>
+                            {field.label} <span style={{ color: "#3A4555" }}>({field.unit})</span>
+                          </label>
+                          <input
+                            type="number" step="any"
+                            placeholder={field.placeholder}
+                            value={soil[field.key]}
+                            onChange={e => handleSoilChange(field.key, e.target.value)}
+                            style={{
+                              width: "100%", padding: "8px 12px", background: "#111620",
+                              border: "1px solid #1E2A3A", borderRadius: 6, color: "#D4D9E1",
+                              fontSize: 14, fontFamily: "'IBM Plex Mono', monospace",
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Run Button */}
+            <button
+              onClick={runEngine}
+              disabled={loading || !hasData}
+              style={{
+                width: "100%", padding: "16px", border: "none", borderRadius: 8, cursor: loading || !hasData ? "default" : "pointer",
+                background: loading ? "#1A2332" : !hasData ? "#1A2332" : "linear-gradient(135deg, #2D6B4A 0%, #4A9B6E 100%)",
+                color: loading || !hasData ? "#4A5568" : "#fff",
+                fontSize: 15, fontWeight: 700, letterSpacing: 0.5,
+                fontFamily: "inherit",
+                transition: "all 0.3s",
+                marginTop: 8,
+              }}
+            >
+              {loading ? (
+                <span style={{ animation: "pulse 2s ease-in-out infinite" }}>
+                  {loadingMessages[loadingMsg]}
+                </span>
+              ) : "Compound Prescription"}
+            </button>
+            {error && (
+              <div style={{ marginTop: 12, padding: "10px 14px", background: "#3D1417", border: "1px solid #7F2D35", borderRadius: 6, color: "#F87171", fontSize: 13 }}>
+                {error}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* RESULTS TAB */}
+        {activeTab === "results" && result && (
+          <div ref={resultRef} style={{ animation: "slideUp 0.3s ease" }}>
+
+            {/* Priority Flags */}
+            {result.priority_flags && (
+              <div style={{ marginBottom: 28 }}>
+                <div style={{ fontSize: 11, color: "#4A9B6E", letterSpacing: 2, textTransform: "uppercase", fontWeight: 700, marginBottom: 12 }}>
+                  Priority Flags
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {result.priority_flags.map((f, i) => (
+                    <div key={i} style={{
+                      padding: "10px 14px", background: "#111620", border: "1px solid #1E2A3A",
+                      borderRadius: 6, display: "flex", alignItems: "center", gap: 12,
+                    }}>
+                      <StatusTag status={f.status} />
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#C0C8D4", minWidth: 140 }}>{f.flag}</span>
+                      <span style={{ fontSize: 12, color: "#6B7A8D" }}>{f.note}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Gap Analysis */}
+            {result.gap_analysis && (
+              <div style={{ marginBottom: 28 }}>
+                <div style={{ fontSize: 11, color: "#4A9B6E", letterSpacing: 2, textTransform: "uppercase", fontWeight: 700, marginBottom: 12 }}>
+                  Gap Analysis
+                </div>
+                <div style={{ background: "#111620", border: "1px solid #1E2A3A", borderRadius: 8, overflow: "hidden" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                    <thead>
+                      <tr style={{ borderBottom: "1px solid #1E2A3A" }}>
+                        {["Parameter", "Value", "Target", "Status", "Direction"].map(h => (
+                          <th key={h} style={{ padding: "10px 12px", textAlign: "left", color: "#6B7A8D", fontWeight: 600, fontSize: 10, letterSpacing: 1, textTransform: "uppercase" }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {result.gap_analysis.map((g, i) => (
+                        <tr key={i} style={{ borderBottom: "1px solid #151D28" }}>
+                          <td style={{ padding: "8px 12px", fontWeight: 600, color: "#C0C8D4" }}>{g.parameter}</td>
+                          <td style={{ padding: "8px 12px", fontFamily: "'IBM Plex Mono', monospace", color: "#D4D9E1" }}>{g.value}</td>
+                          <td style={{ padding: "8px 12px", color: "#6B7A8D" }}>{g.target}</td>
+                          <td style={{ padding: "8px 12px" }}><StatusTag status={g.status} /></td>
+                          <td style={{ padding: "8px 12px", color: "#8899AA", maxWidth: 200 }}>{g.direction}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Biology Assessment */}
+            {result.biology_assessment && (
+              <div style={{ marginBottom: 28 }}>
+                <div style={{ fontSize: 11, color: "#4A9B6E", letterSpacing: 2, textTransform: "uppercase", fontWeight: 700, marginBottom: 12 }}>
+                  Biology Assessment
+                </div>
+                <div style={{ background: "#111620", border: "1px solid #1E2A3A", borderRadius: 8, padding: "16px 20px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                    <StatusTag status={result.biology_assessment.overall_status} />
+                    <span style={{ fontSize: 12, color: "#6B7A8D" }}>
+                      {result.biology_assessment.data_available ? "Biology data analyzed" : "No biology data provided"}
+                    </span>
+                  </div>
+
+                  {result.biology_assessment.findings?.length > 0 && (
+                    <div style={{ marginBottom: 14 }}>
+                      {result.biology_assessment.findings.map((f, i) => (
+                        <div key={i} style={{
+                          display: "flex", alignItems: "center", gap: 12,
+                          padding: "6px 0", borderBottom: i < result.biology_assessment.findings.length - 1 ? "1px solid #151D28" : "none",
+                        }}>
+                          <StatusTag status={f.status} />
+                          <span style={{ fontSize: 12, color: "#C0C8D4", fontWeight: 600, minWidth: 140 }}>{f.parameter}</span>
+                          <span style={{ fontSize: 12, color: "#6B7A8D", fontFamily: "'IBM Plex Mono', monospace" }}>{f.value}</span>
+                          <span style={{ fontSize: 11, color: "#6B7A8D", flex: 1 }}>{f.interpretation}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {result.biology_assessment.biological_strategy && (
+                    <div style={{
+                      padding: "12px 14px", background: "#0D1218", borderRadius: 6,
+                      fontSize: 12, color: "#A0AABB", lineHeight: 1.6, marginBottom: 10,
+                    }}>
+                      <div style={{ fontSize: 10, color: "#4A9B6E", letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 700, marginBottom: 6 }}>
+                        Biological Strategy
+                      </div>
+                      {result.biology_assessment.biological_strategy}
+                    </div>
+                  )}
+
+                  {result.biology_assessment.future_inoculant_notes && (
+                    <div style={{
+                      padding: "12px 14px", background: "#0D1218", borderRadius: 6,
+                      fontSize: 12, color: "#8899AA", lineHeight: 1.6,
+                      borderLeft: "3px solid #2D6B4A",
+                    }}>
+                      <div style={{ fontSize: 10, color: "#6B7A8D", letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 700, marginBottom: 6 }}>
+                        Future Inoculant Opportunity
+                      </div>
+                      {result.biology_assessment.future_inoculant_notes}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Blend Formulation */}
+            {result.blend && (
+              <div style={{ marginBottom: 28 }}>
+                <div style={{ fontSize: 11, color: "#4A9B6E", letterSpacing: 2, textTransform: "uppercase", fontWeight: 700, marginBottom: 12 }}>
+                  Prescribed Blend
+                </div>
+                <div style={{ background: "#111620", border: "1px solid #1E2A3A", borderRadius: 8, overflow: "hidden" }}>
+                  {result.blend.map((b, i) => {
+                    const ing = INGREDIENTS.find(ig => ig.name === b.ingredient);
+                    const pct = (b.pct * 100).toFixed(1);
+                    const costContrib = ing ? (b.pct * ing.cost_mt).toFixed(0) : "?";
+                    return (
+                      <div key={i} style={{
+                        padding: "12px 16px", borderBottom: i < result.blend.length - 1 ? "1px solid #151D28" : "none",
+                      }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <span style={{
+                              fontFamily: "'IBM Plex Mono', monospace", fontSize: 14, fontWeight: 700,
+                              color: "#4A9B6E", minWidth: 50, textAlign: "right",
+                            }}>{pct}%</span>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: "#D4D9E1" }}>{b.ingredient}</span>
+                          </div>
+                          <span style={{ fontSize: 11, color: "#6B7A8D", fontFamily: "'IBM Plex Mono', monospace" }}>
+                            ${costContrib}/MT
+                          </span>
+                        </div>
+                        {/* Bar */}
+                        <div style={{ marginLeft: 62, marginBottom: 4 }}>
+                          <div style={{ width: "100%", height: 4, background: "#1A2332", borderRadius: 2, overflow: "hidden" }}>
+                            <div style={{
+                              width: `${Math.min(b.pct * 100 * 3, 100)}%`, height: "100%",
+                              background: "linear-gradient(90deg, #2D6B4A, #4A9B6E)",
+                              borderRadius: 2, transition: "width 0.5s ease",
+                            }} />
+                          </div>
+                        </div>
+                        <div style={{ marginLeft: 62, fontSize: 11, color: "#6B7A8D", lineHeight: 1.5 }}>
+                          {b.rationale}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Blend Chemistry Summary */}
+                {result.blend_chemistry && (
+                  <div style={{
+                    marginTop: 12, padding: "12px 16px", background: "#111620",
+                    border: "1px solid #1E2A3A", borderRadius: 8,
+                    display: "flex", gap: 20, flexWrap: "wrap",
+                  }}>
+                    {Object.entries(result.blend_chemistry).map(([k, v]) => (
+                      <div key={k} style={{ textAlign: "center" }}>
+                        <div style={{ fontSize: 10, color: "#6B7A8D", fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>{k}</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: "#4A9B6E", fontFamily: "'IBM Plex Mono', monospace" }}>
+                          {(v * 100).toFixed(2)}%
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Interactions */}
+            {result.interactions_flagged?.length > 0 && (
+              <div style={{ marginBottom: 28 }}>
+                <div style={{ fontSize: 11, color: "#4A9B6E", letterSpacing: 2, textTransform: "uppercase", fontWeight: 700, marginBottom: 12 }}>
+                  Interaction Check
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {result.interactions_flagged.map((int, i) => (
+                    <div key={i} style={{
+                      padding: "10px 14px", background: "#111620", border: "1px solid #1E2A3A",
+                      borderRadius: 6,
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                        <StatusTag status={int.type} />
+                        <span style={{ fontSize: 13, fontWeight: 600, color: "#C0C8D4" }}>{int.pair}</span>
+                      </div>
+                      <div style={{ fontSize: 12, color: "#6B7A8D", marginLeft: 0 }}>{int.note}</div>
+                      {int.action && <div style={{ fontSize: 12, color: "#8899AA", marginTop: 4, fontStyle: "italic" }}>Action: {int.action}</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Climate Analysis & Application Timing */}
+            {result.climate_analysis && (
+              <div style={{ marginBottom: 28 }}>
+                <div style={{ fontSize: 11, color: "#4A9B6E", letterSpacing: 2, textTransform: "uppercase", fontWeight: 700, marginBottom: 12 }}>
+                  Climate Analysis & Application Timing
+                </div>
+                <div style={{ background: "#111620", border: "1px solid #1E2A3A", borderRadius: 8, padding: "16px 20px" }}>
+                  <div style={{ display: "flex", gap: 20, flexWrap: "wrap", marginBottom: 14 }}>
+                    {[
+                      ["Location", result.climate_analysis.location],
+                      ["Climate Zone", result.climate_analysis.climate_zone],
+                      ["Precip", result.climate_analysis.avg_annual_precip_mm + " mm/yr"],
+                      ["Frost-Free", result.climate_analysis.frost_free_days + " days"],
+                      ["Season", result.climate_analysis.growing_season],
+                    ].map(([label, val]) => (
+                      <div key={label}>
+                        <div style={{ fontSize: 10, color: "#6B7A8D", letterSpacing: 1, textTransform: "uppercase", fontWeight: 600 }}>{label}</div>
+                        <div style={{ fontSize: 13, color: "#D4D9E1", fontWeight: 500 }}>{val}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#8899AA", lineHeight: 1.6, marginBottom: 14 }}>
+                    {result.climate_analysis.climate_factors}
+                  </div>
+
+                  {result.climate_analysis.optimal_application_window && (
+                    <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+                      <div style={{ flex: 1, padding: "10px 12px", background: "#0A3D1E", border: "1px solid #1A7F3F", borderRadius: 6 }}>
+                        <div style={{ fontSize: 10, color: "#34D399", letterSpacing: 1, textTransform: "uppercase", fontWeight: 700, marginBottom: 4 }}>Best Window</div>
+                        <div style={{ fontSize: 13, color: "#D4D9E1", fontWeight: 600 }}>{result.climate_analysis.optimal_application_window.primary}</div>
+                      </div>
+                      <div style={{ flex: 1, padding: "10px 12px", background: "#1E293B", border: "1px solid #475569", borderRadius: 6 }}>
+                        <div style={{ fontSize: 10, color: "#94A3B8", letterSpacing: 1, textTransform: "uppercase", fontWeight: 700, marginBottom: 4 }}>Secondary</div>
+                        <div style={{ fontSize: 13, color: "#D4D9E1" }}>{result.climate_analysis.optimal_application_window.secondary}</div>
+                      </div>
+                      <div style={{ flex: 1, padding: "10px 12px", background: "#3D1417", border: "1px solid #7F2D35", borderRadius: 6 }}>
+                        <div style={{ fontSize: 10, color: "#F87171", letterSpacing: 1, textTransform: "uppercase", fontWeight: 700, marginBottom: 4 }}>Avoid</div>
+                        <div style={{ fontSize: 12, color: "#D4D9E1" }}>{result.climate_analysis.optimal_application_window.avoid}</div>
+                      </div>
+                    </div>
+                  )}
+                  <div style={{ fontSize: 12, color: "#6B7A8D", lineHeight: 1.6 }}>
+                    {result.climate_analysis.application_timing_rationale}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Prescribed Application Rate + Batch Calculation */}
+            {result.prescribed_application_rate && (
+              <div style={{ marginBottom: 28 }}>
+                <div style={{ fontSize: 11, color: "#4A9B6E", letterSpacing: 2, textTransform: "uppercase", fontWeight: 700, marginBottom: 12 }}>
+                  Prescribed Rate & Production Order
+                </div>
+                <div style={{
+                  padding: "16px 20px", background: "#111620", border: "1px solid #1E2A3A",
+                  borderRadius: 8,
+                }}>
+                  <div style={{ display: "flex", gap: 32, marginBottom: 12, flexWrap: "wrap" }}>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: 28, fontWeight: 700, color: "#4A9B6E", fontFamily: "'IBM Plex Mono', monospace" }}>
+                        {result.prescribed_application_rate.rate_lb_per_acre}
+                      </div>
+                      <div style={{ fontSize: 10, color: "#6B7A8D", letterSpacing: 1, textTransform: "uppercase" }}>lb/acre</div>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontSize: 28, fontWeight: 700, color: "#6B7A8D", fontFamily: "'IBM Plex Mono', monospace" }}>
+                        {result.prescribed_application_rate.rate_kg_per_ha}
+                      </div>
+                      <div style={{ fontSize: 10, color: "#6B7A8D", letterSpacing: 1, textTransform: "uppercase" }}>kg/ha</div>
+                    </div>
+                    {result.batch_calculation && (
+                      <>
+                        <div style={{ width: 1, background: "#1E2A3A", alignSelf: "stretch" }} />
+                        <div style={{ textAlign: "center" }}>
+                          <div style={{ fontSize: 28, fontWeight: 700, color: "#D4D9E1", fontFamily: "'IBM Plex Mono', monospace" }}>
+                            {(result.batch_calculation.total_product_lbs || 0).toLocaleString()}
+                          </div>
+                          <div style={{ fontSize: 10, color: "#6B7A8D", letterSpacing: 1, textTransform: "uppercase" }}>total lbs needed</div>
+                        </div>
+                        <div style={{ textAlign: "center" }}>
+                          <div style={{ fontSize: 28, fontWeight: 700, color: "#D4D9E1", fontFamily: "'IBM Plex Mono', monospace" }}>
+                            {(result.batch_calculation.total_product_mt || 0).toFixed(1)}
+                          </div>
+                          <div style={{ fontSize: 10, color: "#6B7A8D", letterSpacing: 1, textTransform: "uppercase" }}>metric tons</div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#8899AA", lineHeight: 1.6 }}>
+                    {result.prescribed_application_rate.rationale}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Pellet Feasibility + Economics side by side */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 28 }}>
+              {result.pellet_feasibility && (
+                <div style={{ padding: "16px", background: "#111620", border: "1px solid #1E2A3A", borderRadius: 8 }}>
+                  <div style={{ fontSize: 11, color: "#6B7A8D", letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 600, marginBottom: 12 }}>
+                    Pellet Feasibility
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                    <StatusTag status={result.pellet_feasibility.verdict} />
+                  </div>
+                  <div style={{ fontSize: 12, color: "#8899AA", marginBottom: 8 }}>
+                    Binder: <span style={{ color: "#D4D9E1", fontFamily: "'IBM Plex Mono', monospace" }}>{(result.pellet_feasibility.binder_pct * 100).toFixed(0)}%</span>
+                    {" / "}
+                    Abrasive: <span style={{ color: "#D4D9E1", fontFamily: "'IBM Plex Mono', monospace" }}>{(result.pellet_feasibility.abrasive_pct * 100).toFixed(0)}%</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: "#6B7A8D" }}>{result.pellet_feasibility.note}</div>
+                </div>
+              )}
+
+              {result.economics && (
+                <div style={{ padding: "16px", background: "#111620", border: "1px solid #1E2A3A", borderRadius: 8 }}>
+                  <div style={{ fontSize: 11, color: "#6B7A8D", letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 600, marginBottom: 12 }}>
+                    Economics
+                  </div>
+                  {[
+                    ["Cost/MT", `$${result.economics.cost_per_mt?.toFixed(2)}`],
+                    ["Cost/Acre", `$${result.economics.cost_per_acre?.toFixed(2)}`],
+                    ["Cost/Lb", `$${result.economics.cost_per_lb?.toFixed(3)}`],
+                    ["Sell/Lb", `$${result.economics.suggested_sell_per_lb?.toFixed(3)}`],
+                    ["Gross Margin", `${((result.economics.gross_margin || 0) * 100).toFixed(0)}%`],
+                    ...(result.batch_calculation ? [
+                      ["Project Cost", `$${(result.batch_calculation.total_cost || 0).toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:0})}`],
+                      ["Project Revenue", `$${(result.batch_calculation.total_revenue || 0).toLocaleString(undefined, {minimumFractionDigits:0, maximumFractionDigits:0})}`],
+                    ] : []),
+                  ].map(([label, val]) => (
+                    <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid #151D28" }}>
+                      <span style={{ fontSize: 12, color: "#6B7A8D" }}>{label}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#D4D9E1", fontFamily: "'IBM Plex Mono', monospace" }}>{val}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Reasoning */}
+            {result.reasoning_summary && (
+              <div style={{ marginBottom: 28 }}>
+                <div style={{ fontSize: 11, color: "#4A9B6E", letterSpacing: 2, textTransform: "uppercase", fontWeight: 700, marginBottom: 12 }}>
+                  Formulation Reasoning
+                </div>
+                <div style={{
+                  padding: "16px 20px", background: "#111620", border: "1px solid #1E2A3A",
+                  borderRadius: 8, fontSize: 13, color: "#A0AABB", lineHeight: 1.7,
+                  whiteSpace: "pre-wrap",
+                }}>
+                  {result.reasoning_summary}
+                </div>
+              </div>
+            )}
+
+            {/* Back button */}
+            <button
+              onClick={() => setActiveTab("input")}
+              style={{
+                padding: "12px 24px", border: "1px solid #1E2A3A", borderRadius: 6,
+                background: "transparent", color: "#6B7A8D", fontSize: 13, fontWeight: 600,
+                cursor: "pointer", fontFamily: "inherit",
+              }}
+            >
+              Modify Soil Test
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.render(React.createElement(XudateEngine), document.getElementById('root'));
+</script>
+</body>
+</html>
