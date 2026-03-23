@@ -4,15 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Xudate.ai | Soil Compounding Engine</title>
-<meta name="description" content="AI-powered soil amendment formulation at the intersection of chemistry, biology, physics, and AI.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231A4A3A'/><text x='16' y='22' text-anchor='middle' fill='white' font-size='14' font-weight='bold' font-family='system-ui'>Xu</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #0B0F14; }
-</style>
+<style>* { box-sizing: border-box; margin: 0; padding: 0; } body { background: #0B0F14; }</style>
 </head>
 <body>
 <div id="root"></div>
@@ -87,10 +83,10 @@ pH Range Required: ${blend.ph_low} - ${blend.ph_high}
 Nutrient Demands: N=${blend.n_demand}, P=${blend.p_demand}, K=${blend.k_demand}, S=${blend.s_demand}` : "No seed blend selected.";
 
   const ingList = INGREDIENTS.map(i =>
-    `${i.name} | N:${i.N} P:${i.P} K:${i.K} Ca:${i.Ca} Mg:${i.Mg} S:${i.S} Na:${i.Na} | $${i.cost_mt}/MT | ${i.category} | Binder:${HELPERS[i.name]?.b||0} Abrasive:${HELPERS[i.name]?.a||0}`
+    `${i.name}|${i.N},${i.P},${i.K},${i.Ca},${i.Mg},${i.S},${i.Na}|$${i.cost_mt}|B:${HELPERS[i.name]?.b||0} A:${HELPERS[i.name]?.a||0}`
   ).join("\n");
 
-  const intList = INTERACTIONS.map(i => `${i.pair}: ${i.type} - ${i.note}`).join("\n");
+  const intList = INTERACTIONS.map(i => `${i.pair}:${i.type}-${i.note}`).join("\n");
 
   const soilEntries = Object.entries(soil).filter(([,v]) => v !== "" && v !== null && v !== undefined);
   const soilText = soilEntries.length > 0
@@ -100,80 +96,48 @@ Nutrient Demands: N=${blend.n_demand}, P=${blend.p_demand}, K=${blend.k_demand},
       }).join("\n")
     : "No soil test data provided.";
 
-  return `You are Xudate, a soil amendment formulation engine that operates at the intersection of chemistry, biology, physics, and AI. You manufacture pelleted organic soil amendments for industrial land reclamation in Western Canada. You are the AI equivalent of a compound pharmacist, but for soil. Your name comes from root exudates, the chemical signals plants use to communicate with soil biology.
+  return `You are Xudate, an AI soil amendment formulation engine for pelleted organic amendments in Western Canadian land reclamation.
 
-TASK: Given the soil test data, target seed blend, site location, and site area below, prescribe a custom pellet blend. Output ONLY a JSON object (no markdown, no backticks) with these keys:
+TASK: Prescribe a custom pellet blend. Output ONLY a JSON object (no markdown, no backticks) with these keys. CRITICAL: Keep ALL text values SHORT (1-2 sentences max). The entire response must fit within 6000 tokens.
 
-"priority_flags": [{"flag":"P1: SODICITY","status":"OK|WARNING|CRITICAL","note":"..."}]
-"gap_analysis": [{"parameter":"pH","value":"6.7","target":"5.5-8.0","status":"ADEQUATE|LOW|HIGH|CRITICAL","mechanism":"...","direction":"..."}]
-"biology_assessment": {"data_available":bool,"overall_status":"HEALTHY|STRESSED|DEGRADED|NO DATA","findings":[{"parameter":"...","value":"...","interpretation":"...","status":"..."}],"biological_strategy":"...","future_inoculant_notes":"..."}
-"blend": [{"ingredient":"exact name from DB","pct":0.20,"rationale":"..."}]
+"priority_flags": [{"flag":"P1: SODICITY","status":"OK|WARNING|CRITICAL","note":"1 sentence"}]
+"gap_analysis": [{"parameter":"pH","value":"6.7","target":"5.5-8.0","status":"ADEQUATE|LOW|HIGH|CRITICAL","mechanism":"1 sentence","direction":"1 sentence"}]
+"biology_assessment": {"data_available":bool,"overall_status":"HEALTHY|STRESSED|DEGRADED|NO DATA","findings":[{"parameter":"...","value":"...","interpretation":"brief","status":"..."}],"biological_strategy":"1-2 sentences","future_inoculant_notes":"1-2 sentences"}
+"blend": [{"ingredient":"exact name from DB","pct":0.20,"rationale":"1 sentence max"}]
 "blend_chemistry": {"N":0.045,"P":0.012,"K":0.008,"Ca":0.048,"Mg":0.009,"S":0.016}
-"interactions_flagged": [{"pair":"X + Y","type":"CONFLICT|WARNING|SYNERGY","note":"...","action":"..."}]
-"pellet_feasibility": {"binder_pct":0.35,"abrasive_pct":0.10,"verdict":"GOOD|MARGINAL|POOR","note":"..."}
+"interactions_flagged": [{"pair":"X + Y","type":"CONFLICT|WARNING|SYNERGY","note":"brief","action":"brief"}]
+"pellet_feasibility": {"binder_pct":0.35,"abrasive_pct":0.10,"verdict":"GOOD|MARGINAL|POOR","note":"1 sentence"}
 "economics": {"cost_per_mt":0,"cost_per_acre":0,"cost_per_lb":0,"suggested_sell_per_lb":0,"gross_margin":0.35}
-"prescribed_application_rate": {"rate_lb_per_acre":200,"rate_kg_per_ha":224,"rationale":"..."}
+"prescribed_application_rate": {"rate_lb_per_acre":200,"rate_kg_per_ha":224,"rationale":"1-2 sentences"}
 "batch_calculation": {"site_acres":${areaAcres || 0},"total_product_lbs":0,"total_product_mt":0,"total_cost":0,"total_revenue":0}
-"climate_analysis": {"location":"${location || 'Not provided'}","climate_zone":"...","avg_annual_precip_mm":0,"frost_free_days":0,"growing_season":"...","climate_factors":"...","optimal_application_window":{"primary":"...","secondary":"...","avoid":"..."},"application_timing_rationale":"..."}
-"reasoning_summary": "2-3 paragraphs on formulation logic, tradeoffs, and why this blend fits this soil+plant+climate"
+"climate_analysis": {"location":"${location || 'Not provided'}","climate_zone":"brief","avg_annual_precip_mm":0,"frost_free_days":0,"growing_season":"brief","climate_factors":"1-2 sentences","optimal_application_window":{"primary":"date range","secondary":"date range","avoid":"date range and why (brief)"},"application_timing_rationale":"1-2 sentences"}
+"reasoning_summary": "1 short paragraph on formulation logic and key tradeoffs"
 
 RULES:
-1. Blend percentages must sum to exactly 1.0
-2. Check ALL ingredient interactions before finalizing
-3. Pellet blends need minimum 25% binder content for die integrity
-4. Abrasive ingredients should stay below 25% to protect pellet mill dies
-5. Consider Ca:Mg ratio (ideal 5:1 to 7:1) when choosing lime type
-6. If Ca:Mg < 5, use calcitic lime (not dolomitic). If > 10, dolomitic is OK.
-7. Never combine lime + elemental sulfur (opposing pH functions)
-8. Never combine lime + rock phosphates (pH locks P)
-9. Cost optimization matters but soil function comes first
-10. Use the actual cost_mt values from the ingredient database
-11. Calculate economics: cost_per_mt = sum of (pct * cost_mt), cost_per_lb = cost_per_mt / 2204.62, cost_per_acre = cost_per_lb * prescribed_application_rate, suggested_sell = cost_per_lb / (1 - 0.35)
-12. YOU MUST DETERMINE THE APPLICATION RATE. Prescribe the optimal lb/acre rate based on:
-    - Number and severity of soil constraints identified in gap analysis
-    - Nutrient demand level of the target seed blend (High demand = higher rate)
-    - Concentration of corrective ingredients in the blend (dilute blends need higher rates)
-    - Biology status (degraded biology needs more biological support material per acre)
-    - Climate: colder/drier climates may warrant slightly higher rates due to slower breakdown
-    - Typical ranges: 100-150 lb/ac for minor corrections, 150-250 lb/ac for moderate multi-constraint sites, 250-400 lb/ac for severely degraded reclamation sites, 400-500 lb/ac for extreme cases
-    - Also provide the rate in kg/ha (multiply lb/ac by 1.12085)
-13. BATCH CALCULATION: Site area is ${areaAcres || 'unknown'} acres. Calculate total_product_lbs = rate_lb_per_acre * site_acres. Calculate total_product_mt = total_product_lbs / 2204.62. Calculate total_cost = total_product_lbs * cost_per_lb. Calculate total_revenue = total_product_lbs * suggested_sell_per_lb.
-14. Prefer organic/biological ingredients over conventional synthetics unless soil conditions demand immediate correction
-15. Always include a humic acid source (Humalite) at 10-20% for chelation
-16. Consider nutrient release timing: match fast + slow sources for sustained feeding
-17. CLIMATE RULES: Use the site location to determine climate zone and optimize the prescription:
-    - Identify the climate zone, approximate annual precipitation, frost-free days, and growing season length
-    - Consider how climate affects pellet breakdown: cold climates slow microbial decomposition of organic N sources, dry climates slow physical dissolution, freeze-thaw cycles help physical breakdown of mineral components
-    - Adjust blend for climate: in cold/short-season areas, include faster-release N sources alongside slow-release; in dry areas, include more hygroscopic binders that attract moisture; in high-precip areas, minimize soluble nutrients that leach
-    - Prescribe optimal application timing: typically after last frost but before peak growing season, timed so pellets begin breaking down as soil biology activates at soil temps above 5-8C
-    - If location is not provided, use the seed blend's region to infer climate
-18. BIOLOGY RULES: If biology data is provided (PLFA, respiration, enzyme activity, AMF colonization, microbial biomass), assess the biological health of the soil and factor it into the blend. Key thresholds:
-    - Soil respiration below 8 mg CO2/g/day = biologically stressed, needs carbon/energy inputs (molasses, beet pulp)
-    - Fungi:Bacteria ratio below 0.1 = fungal-deficient, needs chitin sources (BSFL frass) and reduced tillage note
-    - AMF colonization below 10% = mycorrhizal deficit, avoid excess P (suppresses colonization), note future inoculant opportunity
-    - Total PLFA below 20 nmol/g = severely depleted biology, prioritize carbon energy + worm castings for inoculation
-    - Beta-glucosidase below 50 = poor carbon cycling, add labile carbon sources
-    - Phosphatase below 60 = poor P cycling even if P is adequate on paper
-    - Low microbial biomass C (<150 mg/kg) = soil biology needs rebuilding before nutrients will cycle properly
-19. If NO biology data is provided, still include the biology_assessment section but set data_available to false, overall_status to "NO DATA", provide empty findings array, and explain in biological_strategy what a biology test would reveal and why it matters
-20. When biology is degraded, prioritize biostimulant ingredients (BSFL frass, worm castings, kelp, humalite, dried molasses) even if they cost more, because nutrients without biology to cycle them are wasted
+1. Blend pct must sum to 1.0. Check all interactions. Min 25% binder, max 25% abrasive.
+2. Ca:Mg ideal 5:1-7:1. If <5 use calcitic lime. Never combine lime+sulfur or lime+rock phosphate.
+3. Economics: cost_per_mt=sum(pct*cost_mt), cost_per_lb=cost_per_mt/2204.62, cost_per_acre=cost_per_lb*rate, sell=cost_per_lb/(1-0.35)
+4. Prescribe application rate: 100-150 lb/ac minor, 150-250 moderate, 250-400 severe, 400-500 extreme. Provide kg/ha (lb/ac*1.12085).
+5. Batch: site=${areaAcres||'unknown'} acres. total_lbs=rate*acres, total_mt=total_lbs/2204.62, total_cost=total_lbs*cost_per_lb, total_revenue=total_lbs*sell_per_lb
+6. Prefer organic over synthetic. Always include Humalite 10-20%. Match fast+slow release sources.
+7. Climate: use location to determine zone, precip, frost-free days. Prescribe application window (primary, secondary, avoid). Cold=faster N sources, dry=hygroscopic binders, high precip=less soluble nutrients.
+8. Biology: if data provided, assess using thresholds: respiration<8=stressed, F:B<0.1=fungal deficit, AMF<10%=avoid excess P, PLFA<20=depleted, glucosidase<50=poor C cycling, phosphatase<60=poor P cycling, mic biomass C<150=rebuild biology first. If no data, set data_available:false, overall_status:"NO DATA", empty findings, explain what testing would reveal.
+9. Keep all text fields CONCISE. Rationales 1-2 sentences max. Reasoning summary 1 short paragraph. This is critical to avoid truncation.
 
-SITE INFORMATION:
-Location: ${location || 'Not provided'}
-Site Area: ${areaAcres ? areaAcres + ' acres' : 'Not provided'}
+SITE: ${location || 'Not provided'} | ${areaAcres ? areaAcres+' acres' : 'Area not provided'}
 
-SOIL TEST DATA:
+SOIL:
 ${soilText}
 
 ${blendInfo}
 
-INGREDIENT DATABASE:
+INGREDIENTS (Name|N,P,K,Ca,Mg,S,Na|$/MT|B:binder A:abrasive):
 ${ingList}
 
-INTERACTION RULES:
+INTERACTIONS:
 ${intList}
 
-Respond ONLY with the JSON object. No other text.`;
+Output ONLY valid JSON. Keep text fields SHORT to avoid truncation.`;
 }
 
 const tagColors = {
@@ -208,7 +172,7 @@ function StatusTag({ status }) {
 
 function XudateEngine() {
   const [soil, setSoil] = useState({...DEFAULT_SOIL});
-  const [selectedBlend, setSelectedBlend] = useState("");
+  const [selectedBlend, setSelectedBlend] = useState("Covers: Rejuvenation Cover");
   const [siteArea, setSiteArea] = useState("");
   const [areaUnit, setAreaUnit] = useState("acres");
   const [siteLocation, setSiteLocation] = useState("");
